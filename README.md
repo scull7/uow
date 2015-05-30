@@ -38,7 +38,7 @@ task  = task.priority("high");
 // Default is zero (0).
 task  = task.attempts(3);
 
-// You can specify a backoff algorithm
+// You can specify a back-off algorithm
 // Default is `fixed`
 task  = task.backoff( true );
 
@@ -52,6 +52,34 @@ task.save()
 });
 
 ```
+
+#### Task Schema
+```javascript
+{
+  id          : "110ec58a-a0f2-4ac4-8393-c866d813b8d1", // UUID v4 of this task.
+  name        : "task-name", // type of task.
+  status      : "ready", // task is ready to be run.
+  data        : { // user supplied data.
+    example   : "This is an example data point.",
+    other     : "another example data point."
+  },
+  after       : 1432956883000, // task available to run after this date.
+  priority    : 0, // normal priority.
+  attempts    : {
+    failed    : 0, // number of times the task failed.
+    cancelled : 0, // number of times the task was started but cancelled.
+    timed_out : 0, // number of times the task timed out.
+    total     : 0, // total number of attempts.
+    max       : 2 // maximum number of times to attempt this task.
+  },
+  backoff     : "fixed" // name of the back-off algorithm.
+}
+```
+
+#### Task Status List
+* ***Ready***   - Task is ready to run if now is greater than `after` date.
+* ***Failed***  - Task has failed and should not be retried.
+* ***Success*** - Task has been successfully completed.
 
 ### Processing Tasks
 ```javascript
@@ -79,3 +107,20 @@ store.getLock(task, time_to_live = 30000);
   worker.emit("process "+task.name, task, callback);
 });
 ```
+
+#### Worker List Schema
+// @TODO add performance statistics.
+```javascript
+{
+  id          : "2a31cb0-1432-11e1-8558-0b488e4fc115", // UUID of the worker.
+  status      : "waiting", // worker is waiting assignment.
+  last_active : 1432957521000, // worker has been idle since this time.
+}
+```
+
+#### Worker Status List
+* ***Waiting***     - Worker is waiting on task assignment.
+* ***Processing***  - Worker is busy processing a task.
+* ***Errored***     - Worker has failed.
+* ***Sleeping***    - Worker has requested some time off.
+* ***Quit***        - Worker has gone home for the day.
