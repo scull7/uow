@@ -1,0 +1,37 @@
+{
+  "name": "uow",
+  "version": "0.0.1",
+  "description": "A unit-of-work queue.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scull7/uow.git"
+  },
+  "keywords": [
+    "job",
+    "schedule",
+    "unit",
+    "of",
+    "work",
+    "queue"
+  ],
+  "author": "Nathan A Sculli",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/scull7/uow/issues"
+  },
+  "homepage": "https://github.com/scull7/uow#readme",
+  "devDependencies": {
+    "chai": "^2.3.0",
+    "codeclimate-test-reporter": "0.0.4",
+    "coveralls": "^2.11.2",
+    "istanbul": "^0.3.14",
+    "mocha": "^2.2.5",
+    "mocha-lcov-reporter": "0.0.2",
+    "sinon": "^1.14.1",
+    "sinon-chai": "^2.7.0"
+  }
+}
