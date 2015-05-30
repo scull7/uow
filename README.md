@@ -77,9 +77,10 @@ task.save()
 ```
 
 #### Task Status List
-* ***Ready***   - Task is ready to run if now is greater than `after` date.
-* ***Failed***  - Task has failed and should not be retried.
-* ***Success*** - Task has been successfully completed.
+* ***Ready***     - Task is ready to run if now is greater than `after` date.
+* ***Failed***    - Task has failed and should not be retried.
+* ***Success***   - Task has been successfully completed.
+* ***Cancelled*** - Task has been cancelled.
 
 ### Processing Tasks
 ```javascript
