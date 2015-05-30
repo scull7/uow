@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/scull7/uow.svg)](https://travis-ci.org/scull7/uow)
+[![Coverage Status](https://coveralls.io/repos/scull7/uow/badge.svg)](https://coveralls.io/r/scull7/uow)
+[![Code Climate](https://codeclimate.com/github/scull7/uow/badges/gpa.svg)](https://codeclimate.com/github/scull7/uow)
+
 # uow
 a simple, multi-backend unit of work queue.
 
