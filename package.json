@@ -3,8 +3,11 @@
   "version": "0.0.1",
   "description": "A unit-of-work queue.",
   "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
   "scripts": {
-    "test": "./node_modules/.bin/mocha test"
+    "test": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -R spec"
   },
   "jscsConfig": {
     "validateIndentation": 2,
