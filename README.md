@@ -21,7 +21,8 @@ var task  = uow.Task("my-tasks", "task-name", {
 task  = task.later(later_js_expression);
 
 // You can delay the task for a specified time.
-// ***Note*** when setting a `later` and `delay` the last one will win.
+// ***Note*** when setting a `later` and `delay` the task will wait `delay`
+//  milliseconds after the `later` schedule date.
 task  = task.delay(number_of_milliseconds);
 
 // You can set a priority on the job.
@@ -63,6 +64,7 @@ task.save()
     example   : "This is an example data point.",
     other     : "another example data point."
   },
+  delay       : 0, // how long to delay the run of this task after, after date.
   after       : 1432956883000, // task available to run after this date.
   priority    : 0, // normal priority.
   attempts    : {
