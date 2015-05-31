@@ -16,9 +16,11 @@ describe "Memory Store", ->
         expect(task.id.length).to.eql 36
 
     it "should throw a TypeError if a task object with a UUID is given.", ->
-      test  = -> store.createTask { id : "bad-things-here" }
-      expect(test).to.throw TypeError
-      expect(test).to.throw "InvalidTaskObject"
+      store.createTask { id : "bad-things-here" }
+      .then (task) -> throw new Error("Should not get here.")
+      .catch (e) ->
+        expect(e.name).to.eql "TypeError"
+        expect(e.message).to.eql "InvalidTaskObject"
 
   describe "::updateTask", ->
 
