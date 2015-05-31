@@ -45,7 +45,7 @@
     "sinon-chai": "^2.7.0"
   },
   "dependencies": {
-    "bluebird": "^2.9.26",
+    "bluebird": "^2.9.27",
     "later": "^1.1.6",
     "uuid": "^2.0.1"
   }
