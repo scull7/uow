@@ -33,7 +33,7 @@ describe 'Task Lock Functions', ->
 
       expect(TaskLock.isTaskLocked(task)).to.be.true
 
-    it 'should return true ifj the lock is expired.', ->
+    it 'should return true if the lock is expired.', ->
       task  = TaskLock.acquire(null, {})
       @clock.tick(30001)
 
