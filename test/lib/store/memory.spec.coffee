@@ -1,3 +1,4 @@
+crypto                = require 'crypto'
 MemoryStore           = require "../../../lib/store/memory.js"
 
 describe "Memory Store", ->
@@ -74,23 +75,101 @@ describe "Memory Store", ->
     afterEach ->
       @clock.restore()
 
-    it "should be a function with an arity of two", ->
+    it "should be a function with an arity of three", ->
       expect(store.lockTask).to.be.a "function"
-      expect(store.lockTask.length).to.eql 2
+      expect(store.lockTask.length).to.eql 3
 
-    it "should throw a TypeError if an ID is not given.", ->
+    it "should throw a TypeError if a worker ID is not given.", ->
       store.lockTask()
+      .then -> throw new Error("Should not get here.")
+      .catch (e) ->
+        expect(e.name).to.eql "TypeError"
+        expect(e.message).to.eql "WorkerIdNotProvided"
+
+    it "should throw a TypeError if a task ID is not given.", ->
+      store.lockTask('my-worker-id')
       .then -> throw new Error("Should not get here.")
       .catch (e) ->
         expect(e.name).to.eql "TypeError"
         expect(e.message).to.eql "TaskIdNotProvided"
 
-    it "should lock a never before locked task", ->
-      task  = { name : "test-task" }
+    it "should lock an unlocked task", ->
+      task          = { name : "test-task" }
+      requestor     = 'my-requestor-id'
+      expected_key  = null
+
       store.createTask(task)
-      .then (task) -> store.lockTask(task.id)
+      .then (task) ->
+        hash  = crypto.createHash 'sha512'
+        hash.update(requestor)
+        hash.update(task.id)
+
+        expected_key  = hash.digest 'hex'
+
+        store.lockTask(requestor, task.id)
+
       .then (task) ->
         expect(task.lock).to.be.an "object"
         expect(task.lock.time).to.eql now
+        expect(task.lock.key).to.eql expected_key
         # 30 seconds is the default TTL
         expect(task.lock.ttl).to.eql 30000
+
+  describe '::unlockTask', ->
+    now      = 1433029250000
+    beforeEach ->
+      @clock = sinon.useFakeTimers(now)
+
+
+    afterEach ->
+      @clock.restore()
+
+    it 'should be a function with an arity of two', ->
+      expect(store.unlockTask).to.be.a 'function'
+      expect(store.unlockTask.length).to.eql 2
+
+    it "should throw a TypeError if a worker ID is not given.", ->
+      store.unlockTask()
+      .then -> throw new Error("Should not get here.")
+      .catch (e) ->
+        expect(e.name).to.eql "TypeError"
+        expect(e.message).to.eql "WorkerIdNotProvided"
+
+    it "should throw a TypeError if a task ID is not given.", ->
+      store.unlockTask('my-worker-id')
+      .then -> throw new Error("Should not get here.")
+      .catch (e) ->
+        expect(e.name).to.eql "TypeError"
+        expect(e.message).to.eql "TaskIdNotProvided"
+
+    it 'should throw a LockError if an invalid requestor is given.', ->
+      task          = { name  : 'test-task' }
+      requestor     = 'unlock-requestor'
+
+      store.createTask(task)
+
+      .then (task) -> store.lockTask(requestor, task.id)
+
+      .then (task) -> store.unlockTask('bad-requestor', task.id)
+
+      .then -> throw new Error('UnexpectedSuccess')
+
+      .catch (e) ->
+        expect(e.name).to.eql 'LockError'
+        expect(e.message).to.eql 'KeyInvalid'
+
+
+    it 'should unlock a locked task given the correct requestor ID', ->
+      task          = { name  : 'test-task' }
+      requestor     = 'unlock-requestor'
+
+      store.createTask(task)
+
+      .then (task) -> store.lockTask(requestor, task.id)
+
+      .then (task) -> store.unlockTask(requestor, task.id)
+
+      .then (task) ->
+
+        expect(task.lock).to.eql null
+        expect(task.name).to.eql 'test-task'
