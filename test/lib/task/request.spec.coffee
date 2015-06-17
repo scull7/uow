@@ -18,6 +18,17 @@ describe 'Task Request', ->
     expect(request.backoff).to.be.a 'function'
     expect(request.send).to.be.a 'function'
 
+  it 'should allow you to specify the task constructor', ->
+    constructor_spy = sinon.spy()
+    class TestTask
+      constructor: constructor_spy
+
+    request = new TaskRequest('test-task', 'my-queue', TestTask)
+
+    expect(constructor_spy.calledOnce).to.be.true
+    calledWith  = constructor_spy.calledWithExactly('test-task', 'my-queue')
+    expect(calledWith).to.be.true
+
   describe '::data', ->
 
     it 'should set the task data key to the given data object.', ->
