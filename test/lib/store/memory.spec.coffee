@@ -1,5 +1,6 @@
 crypto                = require 'crypto'
 MemoryStore           = require "../../../lib/store/memory.js"
+LockError             = require '../../../lib/lock/exception.js'
 
 describe "Memory Store", ->
   store     = null
@@ -25,16 +26,41 @@ describe "Memory Store", ->
 
   describe "::updateTask", ->
 
-    it "should be a function with an arity of one", ->
+    it "should be a function with an arity of two", ->
       expect(store.updateTask).to.be.a "function"
-      expect(store.updateTask.length).to.eql 1
+      expect(store.updateTask.length).to.eql 2
+
+    it 'should throw a lock error if the task is locked by another worker.', ->
+      store.createTask {}
+      .then (task) -> store.lockTask('worker-1', task.id)
+
+      .then (task) ->
+        task.updated  = 1
+        store.updateTask('worker-2', task)
+
+      .then -> throw Error('UnexpectedSuccess')
+
+      .catch LockError, (e) ->
+        expect(e.message).to.eql 'TaskLocked'
+
+    it 'should update a locked task for the lock holding worker.', ->
+      store.createTask {}
+
+      .then (task) -> store.lockTask('worker-1', task.id)
+
+      .then (task) ->
+        task.updated = 2
+        store.updateTask('worker-1', task)
+
+      .then (task) ->
+        expect(task.updated).to.eql 2
 
     it "should update the stored object", ->
       store.createTask {}
       .then (task) ->
         task.updated    = 1
         return task
-      .then (task) -> store.updateTask(task)
+      .then (task) -> store.updateTask('worker-1', task)
       .then (task) ->
         expect(task.updated).to.eql 1
         return store.getTaskById(task.id)
@@ -42,7 +68,7 @@ describe "Memory Store", ->
         expect(task.updated).to.eql 1
 
     it "should throw a TypeError if a task object without a UUID is given.", ->
-      store.updateTask { updated: 1 }
+      store.updateTask 'worker-id', { updated: 1 }
       .then -> throw new Error("Should not get here.")
       .catch (e) ->
         expect(e.name).to.eql "TypeError"
