@@ -48,6 +48,28 @@ describe 'Task Lock Functions', ->
 
       expect(test).to.throw TypeError, /TimeToLiveNotPresent/
 
+  describe '::isLockHolder', ->
+
+    it 'should throw a LockError when the given task is not locked.', ->
+      task  = { id: 'my-task-id' }
+      test  = -> TaskLock.isLockHolder(task, 'my-requestor-id')
+
+      expect(test).to.throw LockError, /TaskNotLocked/
+
+    it 'should return false when the requestorID does not match.', ->
+      task  = { id: 'my-task-id' }
+      task  = TaskLock.acquire(null, 'my-requestor-id', task)
+
+      actual  = TaskLock.isLockHolder(task, 'not-my-requestor-id')
+      expect(actual).to.be.false
+
+    it 'should return true when the requestorID does match.', ->
+      task  = { id: 'my-task-id' }
+      task  = TaskLock.acquire(null, 'my-requestor-id', task)
+
+      actual  = TaskLock.isLockHolder(task, 'my-requestor-id')
+      expect(actual).to.be.true
+
   describe '::acquire', ->
     before -> @clock = sinon.useFakeTimers(START_TIME)
 
@@ -62,11 +84,23 @@ describe 'Task Lock Functions', ->
 
       expect(test).to.throw TypeError, /TaskNotFound/
 
-    it 'should throw a LockError if the given task is already locked', ->
-      task  = TaskLock.acquire(null, 'my-request-id' , { id : 'my-task-id' })
-      test  = -> TaskLock.acquire(null, 'my-request-id', task)
+    describe 'When a task is already locked', ->
 
-      expect(test).to.throw LockError, /TaskAlreadyLocked/
+      it 'should throw a LockError if the requestor ID is not the lock holders',
+      ->
+        task  = TaskLock.acquire(null, 'my-request-id' , { id : 'my-task-id' })
+        test  = -> TaskLock.acquire(null, 'not-my-request-id', task)
+
+        expect(test).to.throw LockError, /TaskAlreadyLocked/
+
+      it 'should return an the lock if requestor ID is the current lock holder',
+      ->
+        task  = TaskLock.acquire(null, 'my-request-id', { id : 'my-task-id' })
+        @clock.tick 500
+
+        task  = TaskLock.acquire(null, 'my-request-id', task)
+
+        expect(task.lock.time).to.eql 500 + START_TIME
 
     it 'should return a lock with the default ttl if on is not specified', ->
       actual  = TaskLock.acquire(null, 'my-request-id', { id : 'my-task-id' })
