@@ -1,114 +1,135 @@
 
 later       = require('later')
-TaskFactory = require '../../lib/task.js'
+Task        = require '../../lib/task.js'
+LockError   = require '../../lib/lock/exception.js'
 
 START_TIME  = -875735838000
 
 describe 'Task Factory', ->
+  queue     = null
   task      = null
+  workerId  = 'my-test-worker'
 
-  beforeEach -> task  = TaskFactory('test_queue', 'test_task')
+  beforeEach ->
+    @clock    = sinon.useFakeTimers(START_TIME)
+
+    queue     =
+      taskLock      : sinon.spy()
+      taskComplete  : sinon.spy()
+      taskFail      : sinon.spy()
+      taskCancel    : sinon.spy()
+      taskProgress  : sinon.spy()
+
+    task      = new Task('test-task', queue)
+
+  afterEach -> @clock.restore()
 
   it 'should return a Task object', ->
-    expect(task.delay).to.be.a 'function'
-    expect(task.attempts).to.be.a 'function'
-    expect(task.priority).to.be.a 'function'
-    expect(task.backoff).to.be.a 'function'
-    expect(task.save).to.be.a 'function'
 
-  describe '::later', ->
-    before -> @clock = sinon.useFakeTimers(START_TIME)
+    expect(task.queue).to.eql queue
+    expect(task.id).to.be.null
+    expect(task.name).to.eql 'test-task'
+    expect(task.status).to.eql Task.STATUS.NEW
+    expect(task.data).to.eql {}
+    expect(task.after).to.eql START_TIME
+    expect(task.delay).to.eql 0
+    expect(task.priority).to.eql Task.PRIORITY.NORMAL
+    expect(task.attempts).to.eql {
+      failed    : 0
+      cancelled : 0
+      timed_out : 0
+      total     : 0
+      max       : 1
+    }
+    expect(task.backoff).to.eql 'fixed'
+    expect(task.schedule).to.be.null
 
-    after -> @clock.restore()
+  describe '::lock', ->
+    it 'should throw a LockError if the task is not persisted.', ->
+      test  = -> task.lock(workerId)
+      expect(test).to.throw LockError, 'TaskNotPersisted'
 
-    it 'should accept a later.js expression and set the task after property', ->
-      expression  = 'at 10:00pm tonight'
-      expected    = -875671200000
+    it 'should call the queue to lock this task for a worker.', ->
+      task.id = 'this-is-my-id'
+      task.lock(workerId)
 
-      task.later(expression)
+      expect(queue.taskLock.calledOnce).to.be.true
 
-      expect(task.task.after).to.eql expected
+      calledWith  = queue.taskLock.calledWithExactly(workerId, 'this-is-my-id')
+      expect(calledWith).to.be.true
 
-  describe '::delay', ->
+  describe '::complete', ->
+    it 'should throw a TypeError if the task is not persisted.', ->
+      test  = -> task.complete(workerId)
+      expect(test).to.throw TypeError, 'TaskNotPersisted'
 
-    it 'should set the task delay to the given number of milliseconds.', ->
-      expected  = 10000
+    it 'should call the queue to mark the task as complete', ->
+      task.id   = 'this-is-my-id'
+      response  = 'response'
+      task.complete(workerId, response)
 
-      task.delay(expected)
+      expect(queue.taskComplete.calledOnce).to.be.true
 
-      expect(task.task.delay).to.eql expected
+      calledWith  = queue.taskComplete.calledWithExactly(
+        workerId,
+        'this-is-my-id',
+        'response'
+      )
+      expect(calledWith).to.be.true
 
-    it 'should throw a TypeError if the delay is not a number', ->
-      test  = -> task.delay('not a number')
+  describe '::fail', ->
+    it 'should throw a TypeError if the task is not persisted.', ->
+      test  = -> task.fail(workerId)
+      expect(test).to.throw TypeError, 'TaskNotPersisted'
 
-      expect(test).to.throw TypeError, /InvalidDelay/
+    it 'should call the queue to mark this task as failed', ->
+      task.id   = 'this-is-my-id'
+      response  = 'response'
+      task.fail(workerId, response)
 
-  describe '::attempts', ->
+      expect(queue.taskFail.calledOnce).to.be.true
 
-    it 'should set the max attempts', ->
-      expected  = 10
+      calledWith  = queue.taskFail.calledWithExactly(
+        workerId,
+        'this-is-my-id',
+        'response'
+      )
+      expect(calledWith).to.be.true
 
-      task.attempts(expected)
+  describe '::cancel', ->
+    it 'should throw a TypeError if the task is not persisted.', ->
+      test  = -> task.cancel(workerId)
+      expect(test).to.throw TypeError, 'TaskNotPersisted'
 
-      expect(task.task.attempts.max).to.eql expected
+    it 'should call the queue to mark the task as cancelled.', ->
+      task.id   = 'this-is-my-id'
+      response  = 'response'
+      task.cancel(workerId, response)
 
-    it 'should throw a TypeError if the max attempts is not a number.', ->
-      test = -> task.attempts('not a number')
+      expect(queue.taskCancel.calledOnce).to.be.true
 
-      expect(test).to.throw TypeError, /InvalidMaxAttempts/
+      calledWith  = queue.taskCancel.calledWithExactly(
+        workerId,
+        'this-is-my-id',
+        'response'
+      )
+      expect(calledWith).to.be.true
 
-  describe '::priority', ->
+  describe '::progress', ->
+    it 'should throw a TypeError if the task is not persisted.', ->
+      test  = -> task.progress(workerId)
+      expect(test).to.throw TypeError, 'TaskNotPersisted'
 
-    it 'should set the priority that\'s in the map', ->
-      expected  = TaskFactory.PRIORITY.LOW
+    it 'should call the queue to update the task processing progress.', ->
+      task.id   = 'this-is-my-id'
+      response  = 'response'
+      task.progress(workerId, response)
 
-      task.priority(expected)
+      expect(queue.taskProgress.calledOnce).to.be.true
 
-      expect(task.task.priority).to.eql expected
-
-    it 'should set the priority to a given integer', ->
-      expected  = 2
-
-      task.priority(expected)
-
-      expect(task.task.priority).to.eql expected
-
-    it 'should throw a TypeError if the priority code is not a number.', ->
-      test = -> task.priority('not a number')
-
-      expect(test).to.throw TypeError, /InvalidPriority/
-
-  describe '::backoff', ->
-
-    it 'should set the backoff algorithm', ->
-
-      task.backoff('fixed')
-
-      expect(task.task.backoff).to.eql 'fixed'
-
-    it 'should throw a TypeError if the algorithm is unknown.', ->
-
-      test = -> task.backoff('bad algo')
-      
-      expect(test).to.throw TypeError, /InvalidBackoffAlgorithm/
-
-  describe '::save', ->
-
-    it 'should call the createTask if the current task doesn\'t have an ID.', ->
-
-      spy = task.queue.createTask = sinon.spy()
-
-      task.save()
-
-      expect(spy.calledOnce).to.be.true
-      expect(spy.calledWithExactly(task.task)).to.be.true
-
-    it 'should call the updateTask if the current task has an ID.', ->
-
-      spy = task.queue.updateTask = sinon.spy()
-
-      task.task.id = 1234
-      task.save()
-
-      expect(spy.calledOnce).to.be.true
-      expect(spy.calledWithExactly(task.task)).to.be.true
+      calledWith  = queue.taskProgress.calledWithExactly(
+        workerId,
+        'this-is-my-id',
+        'response'
+      )
+      expect(calledWith).to.be.true
