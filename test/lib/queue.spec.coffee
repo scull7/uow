@@ -1,62 +1,104 @@
 
-QueueFactory   = require '../../lib/queue.js'
-MemoryStore    = require '../../lib/store/memory.js'
+Queue         = require '../../lib/queue.js'
+MemoryStore   = require '../../lib/store/memory.js'
 
-describe 'Queue Factory', ->
+describe 'Queue', ->
+  queue     = null
+  mockStore = null
 
-  it 'should return an instance of a queue', ->
-    queue = QueueFactory('test')
-    expect(queue.createTask).to.be.a 'function'
-    expect(queue.updateTask).to.be.a 'function'
+  beforeEach ->
+    mockStore =
+      on          : sinon.spy()
+      createTask  : sinon.spy()
+      updateTask  : sinon.spy()
+      getTaskById : sinon.spy()
+      lockTask    : sinon.spy()
+      unlockTask  : sinon.spy()
 
-  it 'should not create more than one queue with the same name.', ->
-    queue1 = QueueFactory('test')
-    queue2 = QueueFactory('test')
-    queue3 = QueueFactory('test2')
+    queue     = new Queue(mockStore)
 
-    expect(queue1).to.eql queue2
-    expect(queue3).to.not.eql queue1
-    expect(queue3).to.not.eql queue2
+  describe '::taskUpdate', ->
 
+    it.skip 'should call the store to update the task', ->
 
-  it 'should use a user provided store', ->
-    store   =
-      createTask: -> null
+    it.skip 'should emit a task::update event', ->
 
-    queue = QueueFactory('test_store', store)
+  describe '::taskFail', ->
 
-    expect(queue.store).to.eql store
+    it.skip 'should call the store to mark the task as failed', ->
 
-  it 'should set it\'s name to the given string', ->
-    queue = QueueFactory('test')
-    expect(queue.name).to.eql 'test'
+    it.skip 'should emit a task::fail event', ->
 
-  describe '::createTask', ->
+  describe '::taskCancel', ->
 
-    it 'should save the given task into the store', ->
-      store =
-        createTask: sinon.spy()
+    it.skip 'should call the store to mark the task as cancelled', ->
 
-      queue = QueueFactory('test_create', store)
+    it.skip 'should emit a task::cancel event', ->
 
-      task  = "something"
+  describe '::taskGetById', ->
 
-      queue.createTask(task)
+    it.skip 'should call the store to get a task by its identifier', ->
 
-      expect(store.createTask.calledOnce).to.be.true
-      expect(store.createTask.calledWithExactly("something")).to.be.true
+  describe '::taskAdd', ->
 
-  describe '::updateTask', ->
+    it.skip 'should call the store to persist the given task object.', ->
 
-    it 'should update the given task within the store.', ->
-      store =
-        updateTask: sinon.spy()
+    it.skip 'should throw an error given a task with an ID', ->
 
-      queue = QueueFactory('test_update', store)
+  describe '::taskAccessAllowed', ->
 
-      task  = "something"
+    it.skip 'should throw a LockError if thw worker ID is not correct', ->
 
-      queue.updateTask(task)
+    it.skip 'should not throw a LockError for an expired lock', ->
 
-      expect(store.updateTask.calledOnce).to.be.true
-      expect(store.updateTask.calledWithExactly("something")).to.be.true
+    it.skip 'should not throw a LockError for an unlocked task', ->
+
+    it.skip 'should not throw a LockError for a correct worker ID', ->
+
+  describe '::taskLock', ->
+
+    it.skip 'should call the store to lock the task', ->
+
+    it.skip 'should store the lock', ->
+
+    it.skip 'should emit a task::lock event', ->
+
+  describe '::taskUnlock', ->
+
+    it.skip 'should call the store to unlock the task', ->
+
+    it.skip 'should remove the task lock from its lock registry', ->
+      
+    it.skip 'should emit a task::unlock event', ->
+
+  describe '::taskProgress', ->
+
+    it.skip 'should call the store to update the task progress', ->
+
+    it.skip 'should emit a task::progress event', ->
+
+  describe '::workerRegister', ->
+
+    it.skip 'should add the given worker to the registry', ->
+
+    it.skip 'should bind the worker to the task::ready event', ->
+
+  describe '::workerNotify', ->
+
+    it 'should emit a task ready event', (done) ->
+      test_task = { name: 'worker-notify-task' }
+
+      queue.on 'task::ready', (task) ->
+        expect(task.name).to.eql 'worker-notify-task'
+        done()
+
+      queue.workerNotify(test_task)
+
+    it.skip 'should be called when the store emits a ready event.', ->
+
+  describe '::workerStatus', ->
+
+    it 'should throw an Error', ->
+
+      test = -> queue.workerStatus()
+      expect(test).to.throw Error, /NotImplemented/
