@@ -18,6 +18,7 @@ describe 'Task Factory', ->
       taskComplete  : sinon.spy()
       taskFail      : sinon.spy()
       taskCancel    : sinon.spy()
+      taskYield     : sinon.spy()
       taskProgress  : sinon.spy()
 
     task      = new Task('test-task', queue)
@@ -93,6 +94,28 @@ describe 'Task Factory', ->
         workerId,
         'this-is-my-id',
         'response'
+      )
+      expect(calledWith).to.be.true
+
+  describe '::yield', ->
+
+    it 'should throw a TypeError if the task is not persisted.', ->
+      test  = -> task.yield(workerId)
+      expect(test).to.throw TypeError, 'TaskNotPersisted'
+
+    it 'should call the queue to mark the task as finished ' +
+    'and schedule the next run', ->
+      task.id   = 'yield-task-id'
+      response  = 'my-response'
+
+      task.yield(workerId, response)
+
+      expect(queue.taskYield.calledOnce).to.be.true
+
+      calledWith  = queue.taskYield.calledWithExactly(
+        workerId,
+        'yield-task-id',
+        'my-response'
       )
       expect(calledWith).to.be.true
 
