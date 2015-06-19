@@ -135,11 +135,11 @@ describe "Memory Store", ->
         store.lockTask(requestor, task.id)
 
       .then (task) ->
-        expect(task.lock).to.be.an "object"
-        expect(task.lock.time).to.eql now
-        expect(task.lock.key).to.eql expected_key
+        expect(task.semaphore).to.be.an "object"
+        expect(task.semaphore.time).to.eql now
+        expect(task.semaphore.key).to.eql expected_key
         # 30 seconds is the default TTL
-        expect(task.lock.ttl).to.eql 30000
+        expect(task.semaphore.ttl).to.eql 30000
 
   describe '::unlockTask', ->
     now      = 1433029250000
@@ -197,5 +197,5 @@ describe "Memory Store", ->
 
       .then (task) ->
 
-        expect(task.lock).to.eql null
+        expect(task.semaphore).to.eql null
         expect(task.name).to.eql 'test-task'
