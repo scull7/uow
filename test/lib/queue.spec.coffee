@@ -15,7 +15,12 @@ describe 'Queue', ->
     store     = new MemoryStore()
     queue     = new Queue(store)
 
-  describe '::taskUpdate', ->
+  it 'should follow the optional new pattern', ->
+    queue     = Queue(store)
+
+    expect(queue instanceof Queue).to.be.true
+
+  describe '::taskComplete', ->
     completeTask        = null
     caughtCompleteEvent = false
 
@@ -38,6 +43,22 @@ describe 'Queue', ->
 
     it 'should emit a task::update event', ->
       expect(caughtCompleteEvent).to.be.true
+
+    it 'should change the response to an array if it\'s not currently an array',
+    ->
+      queue.taskAdd({ name  : 'test-not-array' })
+
+      .then (task) ->
+        task.response = 'not-an-array'
+        queue.store.updateTask('worker-id', task)
+
+      .then (task) -> queue.taskComplete('worker-id', task.id, 'done')
+
+      .then (task) ->
+        expect(task.response).to.eql [
+          'not-an-array'
+          'done'
+        ]
 
   describe '::taskFail', ->
     failedTask        = null
@@ -268,29 +289,35 @@ describe 'Queue', ->
 
     it 'should bind the worker to the task::ready event', (done) ->
       worker  =
-        taskReady : sinon.spy()
+        taskReady : (type, id) ->
+          expect(type).to.eql 'test-register'
+          expect(id).to.eql 'register-task-id'
+          done()
 
-      id      = queue.workerRegister([ 'test1' ], worker)
+      task    = {
+        id      : 'register-task-id'
+        name    : 'test-register'
+        pickle  : -> null
+      }
 
-      queue.workerNotify({ name: 'test1' })
+      id      = queue.workerRegister([ 'test-register' ], worker)
 
-      setTimeout ->
-        expect(worker.taskReady.calledOnce).to.be.true
-
-        calledWith  = worker.taskReady.calledWithExactly({ name : 'test1' })
-        expect(calledWith).to.be.true
-
-        done()
-      , 5
+      queue.workerNotify(task)
 
     it 'should not call the worker if the task name is not in the type list',
     (done) ->
       worker  =
         taskReady : sinon.spy()
 
+      notType = {
+        id      : 'not-type-task'
+        name    : 'not-in-list'
+        pickle  : -> null
+      }
+
       queue.workerRegister([ 'test1', 'test2' ], worker)
 
-      queue.workerNotify({ name: 'not-in-list' })
+      queue.workerNotify(notType)
 
       setTimeout ->
         expect(worker.taskReady.called).to.be.false
@@ -299,21 +326,49 @@ describe 'Queue', ->
 
   describe '::workerNotify', ->
 
-    it 'should emit a task ready event', (done) ->
-      test_task = { name: 'worker-notify-task' }
+    it 'should throw a TypeError if the task is not persisted', ->
+      not_persisted = {
+        name    : 'not-persisted'
+        pickle  : -> null
+      }
 
-      queue.on 'task::ready', (task) ->
-        expect(task.name).to.eql 'worker-notify-task'
+      test  = -> queue.workerNotify(not_persisted)
+      expect(test).to.throw TypeError, /TaskNotPersisted/
+
+    it 'should throw a TypeError if the task name is missing', ->
+      persisted = {
+        id      : 'i-am-persisted'
+        pickle  : -> null
+      }
+
+      test  = -> queue.workerNotify(persisted)
+      expect(test).to.throw TypeError, /TaskTypeMissing/
+
+    it 'should emit a task ready event', (done) ->
+      test_task = {
+        id      : 'worker-notify-id'
+        name    : 'worker-notify-task'
+        pickle  : -> null
+      }
+
+      queue.on 'task::ready', (taskName, taskId) ->
+        expect(taskId).to.eql 'worker-notify-id'
+        expect(taskName).to.eql 'worker-notify-task'
         done()
 
       queue.workerNotify(test_task)
 
     it 'should be called when the store emits a ready event.', (done) ->
 
-      task  = { name: 'test1' }
+      task  = {
+        id    : 'ready-task-id'
+        name  : 'test1'
+        pickle: -> null
+      }
 
-      queue.on 'task::ready', (event_task) ->
-        expect(event_task).to.eql task
+      queue.on 'task::ready', (taskName, taskId) ->
+        expect(taskName).to.eql 'test1'
+        expect(taskId).to.eql 'ready-task-id'
         done()
 
       store.emit 'ready', task
