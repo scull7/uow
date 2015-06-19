@@ -42,7 +42,7 @@ describe 'Task Lock Functions', ->
 
     it 'should throw a TypeError if a lock does not have a TTL', ->
       task  = TaskLock.acquire(null, 'my-request-id', { id  : 'my-task-id' })
-      task.lock.ttl = null
+      task.semaphore.ttl = null
 
       test  = -> TaskLock.isTaskLocked(task)
 
@@ -100,22 +100,22 @@ describe 'Task Lock Functions', ->
 
         task  = TaskLock.acquire(null, 'my-request-id', task)
 
-        expect(task.lock.time).to.eql 500 + START_TIME
+        expect(task.semaphore.time).to.eql 500 + START_TIME
 
     it 'should return a lock with the default ttl if on is not specified', ->
       actual  = TaskLock.acquire(null, 'my-request-id', { id : 'my-task-id' })
 
-      expect(actual.lock.ttl).to.eql 30000
+      expect(actual.semaphore.ttl).to.eql 30000
 
     it 'should return a lock with the current timestamp', ->
       actual  = TaskLock.acquire(null, 'my-request-id', { id : 'my-task-id' })
 
-      expect(actual.lock.time).to.eql START_TIME
+      expect(actual.semaphore.time).to.eql START_TIME
 
     it 'should return a lock with the specified TTL', ->
       actual  = TaskLock.acquire(15000, 'my-request-id', { id : 'my-task-id' })
 
-      expect(actual.lock.ttl).to.eql 15000
+      expect(actual.semaphore.ttl).to.eql 15000
 
     it 'should generate a key from the requestor ID and task ID.', ->
       requestorId   = 'my-request-id'
@@ -129,7 +129,7 @@ describe 'Task Lock Functions', ->
 
       actual  = TaskLock.acquire(15000, 'my-request-id', { id : 'my-task-id' })
 
-      expect(actual.lock.key).to.eql expected_key
+      expect(actual.semaphore.key).to.eql expected_key
 
   describe '::release', ->
 
