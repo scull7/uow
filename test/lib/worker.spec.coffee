@@ -1,6 +1,7 @@
 bluebird        = require 'bluebird'
 Worker          = require '../../lib/worker.js'
 Queue           = require '../../lib/queue.js'
+Task            = require '../../lib/task.js'
 TaskRequest     = require '../../lib/task/request.js'
 MemoryStore     = require '../../lib/store/memory.js'
 
@@ -75,7 +76,7 @@ describe 'Worker', ->
       bluebird.join fooRequest.send(), barRequest.send(), promise
 
       .spread (foo, bar, locked) ->
-        fooTask     = foo
+        fooTask     = Task.dePickle(foo, queue)
         barTask     = bar
         lockedTask  = locked
 

@@ -63,3 +63,48 @@ describe 'Unit of Work Queue', ->
 
       registered  = worker.queue.registry[worker.id]
       expect(registered.worker).to.eql worker
+
+  describe 'Task Process', ->
+    request   = null
+    worker    = null
+    result    = null
+    response  = null
+    store     = null
+
+    before (done) ->
+      store   = new MemoryStore()
+      queue   = uow('process-test', { store : store })
+
+      request = uow('process-test').requestTask('process')
+      request.data {
+        foo   : 'bar'
+      }
+
+      worker  = uow('process-test').registerWorker({ types: 'process' })
+      worker.on 'process', (workerId, task) ->
+        response  = {
+          workerId  : workerId
+          taskId    : task.id
+        }
+
+        task.complete(workerId, response)
+
+        .then -> done()
+
+      request.send()
+
+      .then (task) ->
+
+        task.status = 'ready'
+        return store.updateTask(worker.id, task)
+
+      .then (task) ->
+        result  = task
+        store.emit 'ready', task
+
+    it 'should mark the task as successfully run', ->
+
+      store.getTaskById(result.id)
+
+      .then (task) ->
+        expect(result.status).to.eql 'success'
