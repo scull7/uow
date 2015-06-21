@@ -2,7 +2,7 @@
 Queue             = require '../../lib/queue.js'
 TaskRequest       = require '../../lib/task/request.js'
 MemoryStore       = require '../../lib/store/memory.js'
-TaskLock          = require '../../lib/task/lock.js'
+TaskLock          = require 'uow-lock'
 { inherits }      = require 'util'
 { EventEmitter }  = require 'events'
 

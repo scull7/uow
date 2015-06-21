@@ -1,6 +1,6 @@
 crypto                = require 'crypto'
 MemoryStore           = require "../../../lib/store/memory.js"
-LockError             = require '../../../lib/lock/exception.js'
+{ LockError }         = require 'uow-lock'
 
 describe "Memory Store", ->
   store     = null

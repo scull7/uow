@@ -1,7 +1,7 @@
 
-later       = require('later')
-Task        = require '../../lib/task.js'
-LockError   = require '../../lib/lock/exception.js'
+later         = require('later')
+Task          = require '../../lib/task.js'
+{ LockError } = require 'uow-lock'
 
 START_TIME  = -875735838000
 

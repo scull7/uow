@@ -47,6 +47,7 @@
   "dependencies": {
     "bluebird": "^2.9.27",
     "later": "^1.1.6",
+    "uow-lock": "0.0.1",
     "uuid": "^2.0.1"
   }
 }
