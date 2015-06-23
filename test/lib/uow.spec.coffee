@@ -1,9 +1,9 @@
 
 uow         = require '../../lib/uow.js'
 Queue       = require '../../lib/queue.js'
-MemoryStore = require '../../lib/store/memory.js'
 TaskRequest = require '../../lib/task/request.js'
 TaskWorker  = require '../../lib/worker.js'
+{ MemoryStore } = require 'uow-store'
 
 describe 'Unit of Work Queue', ->
 
@@ -21,7 +21,7 @@ describe 'Unit of Work Queue', ->
     queue = null
 
     beforeEach ->
-      store     = new MemoryStore()
+      store     = MemoryStore()
       queue     = uow('request-task-test', { store: store })
 
     it 'should return a new task request object', ->

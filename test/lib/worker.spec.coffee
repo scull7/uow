@@ -3,7 +3,7 @@ Worker          = require '../../lib/worker.js'
 Queue           = require '../../lib/queue.js'
 Task            = require '../../lib/task.js'
 TaskRequest     = require '../../lib/task/request.js'
-MemoryStore     = require '../../lib/store/memory.js'
+{ MemoryStore } = require 'uow-store'
 
 describe 'Worker', ->
   queue   = null
@@ -12,7 +12,7 @@ describe 'Worker', ->
   worker  = null
 
   beforeEach ->
-    store   = new MemoryStore()
+    store   = MemoryStore()
     queue   = new Queue(store)
     sinon.spy queue, 'workerRegister'
 
