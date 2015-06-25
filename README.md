@@ -5,6 +5,8 @@
 # uow
 a simple, multi-backend unit of work queue.
 
+## ***WARNING*** - This documentation if full of lies at the moment.
+
 ## Usage
 
 ### Creating a Task.
